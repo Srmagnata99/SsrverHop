@@ -1,0 +1,30 @@
+local placeId = 142823291 -- ID do lugar para o qual você quer fazer o Server Hop
+local teleportService = game:GetService("TeleportService")
+local httpService = game:GetService("HttpService")
+
+-- Função para realizar o Server Hop
+local function serverHop()
+    local servers = {}
+    local nextPageCursor = ""
+
+    -- Continua buscando servidores até encontrar um com espaço
+    repeat
+        local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100&cursor=" .. nextPageCursor
+        local response = httpService:JSONDecode(game:HttpGet(url))
+
+        for _, server in ipairs(response.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                -- Tenta teletransportar para um servidor com espaço disponível
+                teleportService:TeleportToPlaceInstance(placeId, server.id, game.Players.LocalPlayer)
+                return
+            end
+        end
+
+        nextPageCursor = response.nextPageCursor or ""
+    until nextPageCursor == nil or nextPageCursor == ""
+
+    warn("Não foi possível encontrar um servidor com espaço disponível.")
+end
+
+-- Executa a função de Server Hop
+serverHop()
